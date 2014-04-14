@@ -1,4 +1,4 @@
-/* global SettingsListener */
+/* global SettingsListener, lockScreen, LockScreenWindow */
 'use strict';
 
 (function(exports) {
@@ -212,12 +212,16 @@
   AppWindow.prototype.setVisible =
     function aw_setVisible(visible, screenshotIfInvisible) {
       this.debug('Dump: set visibility -> ', visible);
+      var locked = lockScreen && lockScreen.locked;
       if (visible) {
-        this.element.removeAttribute('aria-hidden');
+        // If this window is not the lockscreen, and the screen is locked,
+        // we need to aria-hide the window.
+        this.element.setAttribute('aria-hidden',
+          !(this instanceof LockScreenWindow) && locked);
         this._screenshotOverlayState = 'frame';
         this._showFrame();
       } else {
-        this.element.setAttribute('aria-hidden', 'true');
+        this.element.setAttribute('aria-hidden', true);
         if (screenshotIfInvisible && !this.isHomescreen) {
           this._screenshotOverlayState = 'screenshot';
           this._showScreenshotOverlay();
