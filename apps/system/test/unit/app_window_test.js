@@ -5,7 +5,7 @@ mocha.globals(['SettingsListener', 'removeEventListener', 'addEventListener',
       'KeyboardManager', 'StatusBar', 'BrowserMixin',
       'SoftwareButtonManager', 'AppWindow', 'AppChrome',
       'OrientationManager', 'SettingsListener', 'BrowserFrame',
-      'BrowserConfigHelper', 'System', 'layoutManager',
+      'BrowserConfigHelper', 'System', 'layoutManager', 'lockScreen',
       'AppTransitionController', 'AppWindowManager']);
 
 requireApp('system/test/unit/mock_orientation_manager.js');
@@ -15,11 +15,13 @@ requireApp('system/shared/test/unit/mocks/mock_settings_listener.js');
 requireApp('system/test/unit/mock_applications.js');
 requireApp('system/test/unit/mock_layout_manager.js');
 requireApp('system/test/unit/mock_app_chrome.js');
+requireApp('system/test/unit/mock_lock_screen.js');
+requireApp('system/test/unit/mock_lockscreen_window.js');
 requireApp('system/test/unit/mock_screen_layout.js');
 
 var mocksForAppWindow = new MocksHelper([
   'OrientationManager', 'Applications', 'SettingsListener',
-  'ManifestHelper', 'LayoutManager',
+  'ManifestHelper', 'LayoutManager', 'LockScreen', 'LockScreenWindow',
   'ScreenLayout', 'AppChrome'
 ]).init();
 
@@ -30,6 +32,7 @@ suite('system/AppWindow', function() {
     this.sinon.useFakeTimers();
 
     window.layoutManager = new LayoutManager().start();
+    window.lockScreen = MockLockScreen;
 
     stubById = this.sinon.stub(document, 'getElementById');
     stubById.returns(document.createElement('div'));
@@ -42,6 +45,7 @@ suite('system/AppWindow', function() {
 
   teardown(function() {
     delete window.layoutManager;
+    delete window.lockScreen;
 
     stubById.restore();
   });

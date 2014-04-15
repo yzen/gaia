@@ -2,19 +2,21 @@
 
 mocha.globals(['AppWindow', 'BrowserMixin', 'ActivityWindow',
   'System', 'BrowserFrame', 'BrowserConfigHelper', 'OrientationManager',
-  'SettingsListener', 'Applications']);
+  'SettingsListener', 'Applications', 'lockScreen']);
 
 requireApp('system/test/unit/mock_orientation_manager.js');
 requireApp('system/shared/test/unit/mocks/mock_manifest_helper.js');
 requireApp('system/shared/test/unit/mocks/mock_settings_listener.js');
 requireApp('system/test/unit/mock_applications.js');
 requireApp('system/test/unit/mock_attention_screen.js');
+requireApp('system/test/unit/mock_lock_screen.js');
+requireApp('system/test/unit/mock_lockscreen_window.js');
 
 requireApp('system/shared/test/unit/mocks/mock_screen_layout.js');
 
 var mocksForActivityWindow = new MocksHelper([
   'OrientationManager', 'Applications', 'SettingsListener',
-  'ManifestHelper', 'AttentionScreen'
+  'ManifestHelper', 'AttentionScreen', 'LockScreen', 'LockScreenWindow'
 ]).init();
 
 suite('system/ActivityWindow', function() {
@@ -45,6 +47,7 @@ suite('system/ActivityWindow', function() {
   };
 
   setup(function(done) {
+    window.lockScreen = MockLockScreen;
     stubById = this.sinon.stub(document, 'getElementById');
     stubById.returns(document.createElement('div'));
     requireApp('system/js/system.js');
@@ -56,6 +59,7 @@ suite('system/ActivityWindow', function() {
   });
 
   teardown(function() {
+    delete window.lockScreen;
     stubById.restore();
   });
 
