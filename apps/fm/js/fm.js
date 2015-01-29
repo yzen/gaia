@@ -456,6 +456,8 @@ var frequencyDialer = {
         dialer.childNodes[i].style.MozTransform =
           'translateX(' + this._translateX + 'px)';
       }
+      var dialerContainer = $('dialer-container');
+      dialerContainer.setAttribute('aria-valuenow',frequency);
     }
   },
 
