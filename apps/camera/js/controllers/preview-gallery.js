@@ -76,6 +76,8 @@ PreviewGalleryController.prototype.openPreview = function() {
   this.view.on('click:options', this.onOptionsClick);
   this.view.on('loadingvideo', this.app.firer('busy'));
   this.view.on('playingvideo', this.app.firer('ready'));
+  this.view.on('wheel:right', this.next);
+  this.view.on('wheel:left', this.previous);
 
   // If lockscreen is locked, hide all control buttons
   var secureMode = this.app.inSecureMode;
