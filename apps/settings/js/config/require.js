@@ -380,6 +380,10 @@ require.config({
       exclude: ['main']
     },
     {
+      name: 'modules/jszip',
+      exclude: ['main']
+    },
+    {
       name: 'modules/addon_manager',
       exclude: ['main']
     },

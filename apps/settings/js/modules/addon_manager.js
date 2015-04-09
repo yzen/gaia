@@ -14,6 +14,7 @@ define(function(require) {
   'use strict';
 
   var AppsCache = require('modules/apps_cache');
+  var JSZip = require('modules/jszip');
 
   // This is the AddonManager API
   var AddonManager = {
@@ -39,7 +40,9 @@ define(function(require) {
     addEventListener: addListener,
     removeEventListener: removeListener,
     // returns an addon with matching manifest URL
-    findAddonByManifestURL: findAddonByManifestURL
+    findAddonByManifestURL: findAddonByManifestURL,
+    // pass an app, returns a promise that resolves when the addon is renamed
+    renameAddon: renameAddon
   };
 
   function getManifest(app) {
@@ -102,6 +105,108 @@ define(function(require) {
       request.onerror = function() {
         reject();
       };
+    });
+  }
+
+  function renameAddon(addon, name) {
+    if (!name) {
+      return Promise.reject('no name given');
+    }
+
+    if (!isAddon(addon)) {
+      return Promise.reject('not an addon');
+    }
+
+    var manifest = getManifest(addon);
+    if (name === manifest.name) {
+      return Promise.reject('name is unchanged');
+    }
+
+    // To rename an addon we are creating a new DOMApplication that will have
+    // an updated name. Other manifest attributes are preserved.
+    return new Promise(function(resolve, reject) {
+      // Export an addon as a blob.
+      addon.export().then(function(blob) {
+        // Copy over manifest object.
+        var newManifest = Object.assign({}, manifest);
+        newManifest.name = name;
+
+        deleteAddon(addon).then(function() {
+          blobToArrayBuffer(blob).then(function(arrayBuffer) {
+            var addonBlob = generate(newManifest, unpackScript(arrayBuffer));
+            install(addonBlob).then(resolve).catch(reject);
+          }).catch(reject);
+        }).catch(reject);
+      }).catch(reject);
+    });
+  }
+
+  function unpackScript(arrayBuffer) {
+    var zip = new JSZip();
+    zip.load(arrayBuffer);
+
+    var applicationZipFile = zip.file('application.zip');
+    if (!applicationZipFile) { return; }
+
+    var applicationZip = new JSZip();
+    applicationZip.load(applicationZipFile.asArrayBuffer());
+
+    var scriptFile = applicationZip.file('main.js');
+    if (!scriptFile) { return; }
+
+    return scriptFile.asText();
+  }
+
+  function generate(manifest, script) {
+    var id = 'addon' + Math.round(Math.random() * 100000000);
+    var applicationZip = new JSZip();
+
+    // Ensure that we are creating an addon with a new id.
+    manifest.role = 'addon';
+    manifest.type = 'certified';
+    manifest.origin = 'app://' + id + '.gaiamobile.org';
+
+    applicationZip.file('manifest.webapp', JSON.stringify(manifest));
+    applicationZip.file('main.js', script);
+
+    var packageZip = new JSZip();
+    packageZip.file('metadata.json', JSON.stringify({
+      installOrigin: 'http://gaiamobile.org',
+      manifestURL: 'app://' + id + '.gaiamobile.org/update.webapp',
+      version: 1
+    }));
+    packageZip.file('update.webapp', JSON.stringify({
+      name: manifest.name,
+      package_path: '/application.zip'
+    }));
+    packageZip.file('application.zip',
+      applicationZip.generate({ type: 'arraybuffer' }));
+
+    return new Blob([packageZip.generate({ type: 'arraybuffer' })],
+      { type: 'application/zip' });
+  }
+
+  function blobToArrayBuffer(blob, callback) {
+    return new Promise(function(resolve, reject) {
+      var fileReader = new FileReader();
+      fileReader.onload = function() {
+        resolve(fileReader.result);
+      };
+      fileReader.onerror = function(reason) {
+        reject(reason);
+      };
+      fileReader.readAsArrayBuffer(blob);
+    });
+  }
+
+  function install(blob) {
+    return new Promise(function(resolve, reject) {
+      // Import the addon using memory-backed blob.
+      navigator.mozApps.mgmt.import(blob).then(function (addon) {
+        // Enable the addon by default.
+        enableAddon(addon);
+        resolve(addon);
+      }).catch(reject);
     });
   }
 
