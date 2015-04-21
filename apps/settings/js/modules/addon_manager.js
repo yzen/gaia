@@ -14,7 +14,7 @@ define(function(require) {
   'use strict';
 
   var AppsCache = require('modules/apps_cache');
-  var JSZip = require('modules/jszip');
+  var JSZip = require('jszip');
 
   // This is the AddonManager API
   var AddonManager = {
@@ -124,20 +124,18 @@ define(function(require) {
 
     // To rename an addon we are creating a new DOMApplication that will have
     // an updated name. Other manifest attributes are preserved.
-    return new Promise(function(resolve, reject) {
-      // Export an addon as a blob.
-      addon.export().then(function(blob) {
-        // Copy over manifest object.
-        var newManifest = Object.assign({}, manifest);
-        newManifest.name = name;
+    // Export an addon as a blob.
+    return addon.export().then(function(blob) {
+      // Copy over manifest object.
+      var newManifest = Object.assign({}, manifest);
+      newManifest.name = name;
 
-        deleteAddon(addon).then(function() {
-          blobToArrayBuffer(blob).then(function(arrayBuffer) {
-            var addonBlob = generate(newManifest, unpackScript(arrayBuffer));
-            install(addonBlob).then(resolve).catch(reject);
-          }).catch(reject);
-        }).catch(reject);
-      }).catch(reject);
+      return deleteAddon(addon).then(function() {
+        return blobToArrayBuffer(blob).then(function(arrayBuffer) {
+          var addonBlob = generate(newManifest, unpackScript(arrayBuffer));
+          return install(addonBlob);
+        });
+      });
     });
   }
 

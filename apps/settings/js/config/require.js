@@ -15,6 +15,9 @@ require.config({
     'simcard_lock': {
       exports: 'SimPinLock'
     },
+    'jszip': {
+      exports: 'JSZip'
+    },
     'shared/apn_helper': {
       exports: 'ApnHelper'
     },
@@ -377,10 +380,6 @@ require.config({
     },
     {
       name: 'panels/addon_details/addon_details',
-      exclude: ['main']
-    },
-    {
-      name: 'modules/jszip',
       exclude: ['main']
     },
     {
